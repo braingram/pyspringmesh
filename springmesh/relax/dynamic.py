@@ -48,7 +48,7 @@ def offset_points(mesh, dt):
 
 
 def run_n(mesh, n=1, dt=0.001):
-    for i in xrange(n):
+    for i in xrange(int(n)):
         forces, err = compute_forces(mesh)
         offset_points(mesh, dt)
     return mesh

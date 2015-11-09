@@ -11,7 +11,7 @@ def offset_points(mesh, forces):
         forces * 0.5)
     numpy.add.at(
         mesh.points,
-        mesh.springs['p0'],
+        mesh.springs['p1'],
         -forces * 0.5)
     #for (i, pi) in enumerate(mesh.springs['p0']):
     #    mesh.points[pi] += forces[i] * 0.5
@@ -37,6 +37,13 @@ def compute_forces(mesh, s):
         mesh.springs['k'][:, numpy.newaxis] * s)
     mesh.forces = forces
     return forces, err
+
+
+def run_n(mesh, n=1, s=0.01):
+    for i in xrange(int(n)):
+        forces, err = compute_forces(mesh, s)
+        offset_points(mesh, forces)
+    return mesh
 
 
 def run(mesh, n=1, s=0.01, target_error=1., target_delta=1E-6):

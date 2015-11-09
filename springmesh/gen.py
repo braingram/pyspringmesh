@@ -53,32 +53,37 @@ def triangle_mesh(size=None, k=None, b=None, sel=1.0, tel=1.0):
     return base.Mesh(points, springs)
 
 
-def grid_mesh(size=None, k=1.0, b=1.0):
+def grid_mesh(size=None, k=1.0, b=1.0, sel=1., tel=1.0, diagonals=True):
+    if k is None:
+        k = 1.0
+    if b is None:
+        b = 1.0
     if size is None:
         size = (4, 4)
-    y, x = numpy.mgrid[:size[1], :size[0]].astype('f8')
+    y, x = numpy.mgrid[:size[1], :size[0]].astype('f8') * sel
     springs = []
     to_i = lambda x, y: x + y * size[0]
+    diagl = numpy.sqrt(2 * tel ** 2.)
     for xi in xrange(size[0]):
         for yi in xrange(size[1]):
             if xi != size[0] - 1:
                 springs.append(
-                    (to_i(xi, yi), to_i(xi+1, yi), k, b, 0.9))
-                #if yi != size[1] - 1:
-                #    springs.append(
-                #        (to_i(xi, yi), to_i(xi+1, yi+1), k, 0.707))
+                    (to_i(xi, yi), to_i(xi+1, yi), k, b, tel))
+                if diagonals and yi != size[1] - 1:
+                    springs.append(
+                        (to_i(xi, yi), to_i(xi+1, yi+1), k, b, diagl))
             if yi != size[1] - 1:
                 springs.append(
-                    (to_i(xi, yi), to_i(xi, yi+1), k, b, 0.9))
-                #if xi != 0:
-                #    springs.append(
-                #        (to_i(xi, yi), to_i(xi-1, yi+1), k, 0.707))
+                    (to_i(xi, yi), to_i(xi, yi+1), k, b, tel))
+                if diagonals and xi != 0:
+                    springs.append(
+                        (to_i(xi, yi), to_i(xi-1, yi+1), k, b, diagl))
     points = numpy.vstack((x.flat, y.flat)).T
     springs = base.to_springs(springs)
     return base.Mesh(points, springs)
 
 
-def random(np, ns, xr=None, yr=None):
+def random_mesh(np, ns, xr=None, yr=None, k=None, b=None):
     if xr is None:
         xr = [-10., 10.]
     if yr is None:
@@ -98,7 +103,13 @@ def random(np, ns, xr=None, yr=None):
     npoints = len(points)
     springs['p0'] = numpy.random.randint(0, npoints, ns)
     springs['p1'] = numpy.random.randint(0, npoints, ns)
-    springs['k'] = numpy.random.random(ns)
-    springs['b'] = numpy.random.random(ns)
+    if k is None:
+        springs['k'] = numpy.random.random(ns)
+    else:
+        springs['k'] = k
+    if b is None:
+        springs['b'] = numpy.random.random(ns)
+    else:
+        springs['b'] = b
     springs['l'] = (numpy.random.random(ns) * 5) + 1.
     return base.Mesh(points, springs)
