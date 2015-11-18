@@ -32,14 +32,17 @@ __kernel void compute_forces(
 }
 """
 # TODO replace 0.01 with s
- 
+
+# TODO need to get around no atomic_add float for opencl 
 op_prg = """
 __kernel void offset_points(
-        __global float2 *pts,
+        __global volatile float2 *pts,
         __global const uint2 *pi,
         __global const float2 * f) {
     unsigned int i = get_global_id(0);
 
+    //atomic_add(&(pts[pi[i].x]), f[i]);
+    //atomic_sub(&(pts[pi[i].y]), f[i]);
     pts[pi[i].x] += f[i];
     pts[pi[i].y] -= f[i];
 }
@@ -84,8 +87,15 @@ def prepare_buffers(mesh):
 
 
 def run_n(mesh, n=1, s=0.01):
-    forces, points = prepare_buffers(mesh)
+    assert s == 0.01
+    c, q, cf, op = setup_context()
+    pts, pi, l, k, f = prepare_buffers(mesh)
+    shape = mesh.springs.shape
     for i in xrange(int(n)):
-        forces, err = compute_forces(mesh, s)
-        offset_points(mesh, forces)
+        cf.compute_forces(q, shape, None, pts, pi, l, k, f)
+        op.offset_points(q, shape, None, pts, pi, f)
+    p = numpy.empty(len(mesh.points), pyopencl.array.vec.float2)
+    pyopencl.enqueue_copy(q, p, pts)
+    mesh.points[:, 0] = p['x']
+    mesh.points[:, 1] = p['y']
     return mesh
