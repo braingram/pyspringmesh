@@ -7,9 +7,9 @@ import pylab
 
 import springmesh
 
-size = (1000, 1000)
+#size = (500, 500)
 #size = (200, 200)
-#size = (100, 100)
+size = (100, 100)
 n = 100
 bs = (1024, 1, 1)
 show = False
