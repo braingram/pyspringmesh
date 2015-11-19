@@ -186,6 +186,7 @@ def finalize(gpu_mesh):
 
 
 def run_n(mesh, n=1, s=0.01, bs=(128, 1, 1)):
-    mesh = prepare(mesh, bs=bs)
+    if not hasattr(mesh, gpxs):
+        mesh = prepare(mesh, bs=bs)
     step_n(mesh, n=n, s=s)
     return finalize(mesh)
