@@ -7,7 +7,9 @@ import pylab
 
 import springmesh
 
-size = (200, 200)
+size = (1000, 1000)
+#size = (200, 200)
+#size = (100, 100)
 n = 100
 bs = (1024, 1, 1)
 show = False
@@ -27,14 +29,16 @@ print("mem(free): %s" % (free * 100 / float(total)))
 
 
 gm = springmesh.gen.triangle_mesh(size, 0.01, 0.01, sel=0.5)
-springmesh.relax.cuda.prepare(gm, s, bs)
+springmesh.relax.cuda.prepare(gm, bs)
 (free, total) = pycuda.driver.mem_get_info()
 print("mem(free): %s" % (free * 100 / float(total)))
+print("springs[n]: %s" % (len(gm.springs), ))
+print("points[n]: %s" % (len(gm.points), ))
 i = 0
 while n_iters > 0:
     n_iters -= 1
     t0 = time.time()
-    springmesh.relax.cuda.step_n(gm, n)
+    springmesh.relax.cuda.step_n(gm, n=n, s=s)
     t1 = time.time()
     i += n
 
@@ -45,7 +49,7 @@ while n_iters > 0:
     print("mem(free): %s" % (free * 100 / float(total)))
 
     if not show:
-        time.sleep(delay)
+        #time.sleep(delay)
         continue
     pylab.figure(1)
     pylab.clf()
