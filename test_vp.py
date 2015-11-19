@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import time
 
 import springmesh
 import springmesh.render.vp
@@ -20,6 +21,7 @@ k = None
 n = 5
 s = 0.0001
 dt = 0.001
+verbose = True
 
 
 if len(sys.argv) > 1:
@@ -51,23 +53,26 @@ for name in 'mtype rtype tel sel b k n s dt'.split():
     print("\t%s : %s" % (name, locals()[name]))
 
 
-def srun(m):
-    springmesh.relax.standard.run_n(m, n=n, s=s)
-
-
-def drun(m):
-    springmesh.relax.dynamic.run_n(m, n=n, dt=dt)
+srun = lambda m: springmesh.relax.standard.run_n(m, n=n, s=s)
+drun = lambda m: springmesh.relax.dynamic.run_n(m, n=n, dt=dt)
+crun = lambda m: springmesh.relax.cuda.run_n(m, n=n, s=s)
 
 
 if mtype == 'triangle':
     m = springmesh.gen.triangle_mesh(size, k=k, sel=sel, tel=tel, b=b)
 elif mtype == 'random':
     m = springmesh.gen.random_mesh(size[0], size[1], k=k, b=b)
-else:
+elif mtype == 'grid':
     m = springmesh.gen.grid_mesh(size, k=k, b=b, sel=sel, tel=tel)
-
-if rtype == 'standarad':
-    run = srun
 else:
+    raise ValueError("Unknown mtype: %s" % (mtype, ))
+
+if rtype == 'standard':
+    run = srun
+elif rtype == 'cuda':
+    run = crun
+elif rtype == 'dynamic':
     run = drun
-springmesh.render.vp.run(m, run=run)
+else:
+    raise ValueError("Unknown rtype: %s" % (rtype, ))
+springmesh.render.vp.run(m, run=run, verbose=verbose)

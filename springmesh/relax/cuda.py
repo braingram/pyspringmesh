@@ -39,10 +39,10 @@ __global__ void compute_forces(
     if (i < N) {
         dx = pxs[p1s[i]] - pxs[p0s[i]];
         dy = pys[p1s[i]] - pys[p0s[i]];
-        n = hypotf(dx, dy);
+        n = sqrtf(dx * dx + dy * dy);
+        //n = hypotf(dx, dy);
         fxs[i] = dx / n * (n - ls[i]) * ks[i] * s;
         fys[i] = dy / n * (n - ls[i]) * ks[i] * s;
-
         //p0 = pts[pi[i].x];
         //p1 = pts[pi[i].y];
         //delta = make_float2(p1.x - p0.x, p1.y - p0.y);
@@ -62,19 +62,27 @@ op_source = """
 __global__ void offset_points(
         float *pxs,
         float *pys,
-        uint *p0s,
-        uint *p1s,
-        float *fxs,
-        float *fys) {
+        const uint *p0s,
+        const uint *p1s,
+        const float *fxs,
+        const float *fys) {
 
     // const int i = threadIdx.x;
-    const int i = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+    const uint i = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+    const uint p0 = p0s[i];
+    const uint p1 = p1s[i];
+    const float fx = fxs[i];
+    const float fy = fys[i];
 
     if (i < N) {
-        atomicAdd(&(pxs[p0s[i]]), fxs[i]);
-        atomicAdd(&(pys[p0s[i]]), fys[i]);
-        atomicAdd(&(pxs[p1s[i]]), -fxs[i]);
-        atomicAdd(&(pys[p1s[i]]), -fys[i]);
+        atomicAdd(&(pxs[p0]), fx);
+        atomicAdd(&(pys[p0]), fy);
+        atomicAdd(&(pxs[p1]), -fx);
+        atomicAdd(&(pys[p1]), -fy);
+        //atomicAdd(&(pxs[p0s[i]]), fxs[i]);
+        //atomicAdd(&(pys[p0s[i]]), fys[i]);
+        //atomicAdd(&(pxs[p1s[i]]), -fxs[i]);
+        //atomicAdd(&(pys[p1s[i]]), -fys[i]);
         //atomicAdd(&(pts[pi[i].x].x), f[i].x);
         //atomicAdd(&(pts[pi[i].x].y), f[i].y);
         //atomicAdd(&(pts[pi[i].y].x), -f[i].x);
@@ -164,9 +172,12 @@ def step_n(gpu_mesh, n=1, s=0.01):
             gpu_mesh.gpxs, gpu_mesh.gpys, gpu_mesh.gp0s, gpu_mesh.gp1s,
             gpu_mesh.gls, gpu_mesh.gks, gpu_mesh.gfxs, gpu_mesh.gfys,
             s, block=gpu_mesh.block, grid=gpu_mesh.grid)
+        #pycuda.autoinit.context.synchronize()
         gpu_mesh.op(
             gpu_mesh.gpxs, gpu_mesh.gpys, gpu_mesh.gp0s, gpu_mesh.gp1s,
-            gpu_mesh.gfys, block=gpu_mesh.block, grid=gpu_mesh.grid)
+            gpu_mesh.gfxs, gpu_mesh.gfys,
+            block=gpu_mesh.block, grid=gpu_mesh.grid)
+        #pycuda.autoinit.context.synchronize()
         #gpu_mesh.cf(
         #    gpu_mesh.gpts, gpu_mesh.gpi, gpu_mesh.gl, gpu_mesh.gk, gpu_mesh.gf,
         #    block=gpu_mesh.block, grid=gpu_mesh.grid)
@@ -186,7 +197,7 @@ def finalize(gpu_mesh):
 
 
 def run_n(mesh, n=1, s=0.01, bs=(128, 1, 1)):
-    if not hasattr(mesh, gpxs):
+    if not hasattr(mesh, 'gpxs'):
         mesh = prepare(mesh, bs=bs)
     step_n(mesh, n=n, s=s)
     return finalize(mesh)

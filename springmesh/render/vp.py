@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import time
+
 import numpy
 from vispy import app, scene
 
@@ -29,7 +31,9 @@ def plot(mesh, show_k=False, show_v=False, show_f=False):
     app.run()
 
 
-def run(mesh, show_k=False, show_v=False, show_f=False, run=None):
+def run(
+        mesh, show_k=False, show_v=False, show_f=False,
+        run=None, verbose=False):
     points = mesh.points
     springs = mesh.springs
 
@@ -50,11 +54,19 @@ def run(mesh, show_k=False, show_v=False, show_f=False, run=None):
     view.camera.set_range()
 
     def update(ev):
+        t0 = time.time()
         run(mesh)
+        t1 = time.time()
+        if verbose:
+            print("run: %s" % (t1 - t0, ))
         if mesh.points.min() == numpy.nan or mesh.points.max() == numpy.nan:
             return False
+        t0 = time.time()
         markers.set_data(pos=mesh.points, size=0.5, scaling=True)
         lines.set_data(pos=mesh.points)
+        t1 = time.time()
+        if verbose:
+            print("set_data: %s" % (t1 - t0, ))
 
     if run is not None:
         timer = app.Timer(interval=0, connect=update, start=True)
