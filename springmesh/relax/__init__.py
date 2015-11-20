@@ -8,8 +8,16 @@ from . import standard
 __all__ = ['dynamic', 'parallel', 'standard']
 
 
+has_cuda = False
 try:
-   from . import cuda
-   __all__.append('cuda')
+    import pycuda
+    has_cuda = True
 except ImportError:
-   print("Error importing cuda relax method")
+    has_cuda = False
+
+if has_cuda:
+    try:
+        from . import cuda
+        __all__.append('cuda')
+    except pycuda.driver.RuntimeError:
+       print("Error enabling cuda relax method")
