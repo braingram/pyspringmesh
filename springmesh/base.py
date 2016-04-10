@@ -23,8 +23,14 @@ class Mesh(object):
     _memmap_dirs = []
 
     def __init__(self, points, springs):
-        self.points = points
-        self.springs = springs
+        if not isinstance(points, numpy.ndarray):
+            self.points = numpy.array(points)
+        else:
+            self.points = points
+        if not isinstance(springs, numpy.ndarray):
+            self.springs = numpy.array(springs, dtype=spring_dtype)
+        else:
+            self.springs = springs
 
     def memmap(self):
         if isinstance(self.points, numpy.memmap):
