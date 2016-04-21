@@ -29,6 +29,8 @@ class Mesh(object):
             self.points = points
         if not isinstance(springs, numpy.ndarray):
             self.springs = numpy.array(springs, dtype=spring_dtype)
+        elif self.springs.dtype != spring_dtype:
+            self.springs = springs.astype(spring_dtype)
         else:
             self.springs = springs
 
